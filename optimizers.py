@@ -50,35 +50,35 @@ def DetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, step_scale_se
         else:
             if fast_update:
                 Lambda, Q, *factored_QF = factor_step_probe(F, dF)
-                tmp_x = fast_probe_x(x, 1.0, tau * L, F, dF, Lambda, Q, factored_QF)
+                tmp_x = fast_probe_x(x, 1., tau * L, F, dF, Lambda, Q, factored_QF)
             else:
                 dFTdF = np.dot(dF.T, dF)
                 v = np.dot(dF.T, F)
                 try:
-                    tmp_x = probe_x(x, 1.0, dFTdF + tau * L * np.eye(x.size), v)
+                    tmp_x = probe_x(x, 1., dFTdF + tau * L * np.eye(x.size), v)
                 except np.linalg.LinAlgError as err:
                     print('Singular matrix encountered: {}!'.format(str(err)))
-                    tmp_x = probe_x(x, 1.0, tau * L * np.eye(x.size), v)
+                    tmp_x = probe_x(x, 1., tau * L * np.eye(x.size), v)
         
         n = 1
         while oracle.f_1(tmp_x) > psi(F, dF, x, L, tau, tmp_x):
-            L *= 2.0
+            L *= 2.
             
             if step_scale_search == "Armijo":
                 Lambda, Q, *factored_QF = factor_step_probe(F, dF)
                 tmp_x = armijo_probe_x(oracle, x, tau * L, F, dF, Lambda, Q, factored_QF, **kwargs)
             else:
                 if fast_update:
-                    tmp_x = fast_probe_x(x, 1.0, tau * L, F, dF, Lambda, Q, factored_QF)
+                    tmp_x = fast_probe_x(x, 1., tau * L, F, dF, Lambda, Q, factored_QF)
                 else:
                     try:
-                        tmp_x = probe_x(x, 1.0, dFTdF + tau * L * np.eye(x.size), v)
+                        tmp_x = probe_x(x, 1., dFTdF + tau * L * np.eye(x.size), v)
                     except np.linalg.LinAlgError as err:
                         print('Singular matrix encountered: {}!'.format(str(err)))
-                        tmp_x = probe_x(x, 1.0, tau * L * np.eye(x.size), v)
+                        tmp_x = probe_x(x, 1., tau * L * np.eye(x.size), v)
             
             n += 1
-        L = max(L / 2.0, L_0)
+        L = max(L / 2., L_0)
         x = tmp_x.copy()
         
         f_vals.append(oracle.f_1(x))
@@ -158,35 +158,35 @@ def AccDetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, search_str
         else:
             if fast_update:
                 Lambda, Q, *factored_QF = factor_step_probe(F, dF)
-                tmp_x = fast_probe_x(y, 1.0, tau * L, F, dF, Lambda, Q, factored_QF)
+                tmp_x = fast_probe_x(y, 1., tau * L, F, dF, Lambda, Q, factored_QF)
             else:
                 dFTdF = np.dot(dF.T, dF)
                 v = np.dot(dF.T, F)
                 try:
-                    tmp_x = probe_x(y, 1.0, dFTdF + tau * L * np.eye(y.size), v)
+                    tmp_x = probe_x(y, 1., dFTdF + tau * L * np.eye(y.size), v)
                 except np.linalg.LinAlgError as err:
                     print('Singular matrix encountered: {}!'.format(str(err)))
-                    tmp_x = probe_x(y, 1.0, tau * L * np.eye(y.size), v)
+                    tmp_x = probe_x(y, 1., tau * L * np.eye(y.size), v)
         
         n = 1
         while oracle.f_1(tmp_x) > psi(F, dF, y, L, tau, tmp_x):
-            L *= 2.0
+            L *= 2.
             
             if step_scale_search == "Armijo":
                 Lambda, Q, *factored_QF = factor_step_probe(F, dF)
                 tmp_x = armijo_probe_x(oracle, y, tau * L, F, dF, Lambda, Q, factored_QF, **kwargs)
             else:
                 if fast_update:
-                    tmp_x = fast_probe_x(y, 1.0, tau * L, F, dF, Lambda, Q, factored_QF)
+                    tmp_x = fast_probe_x(y, 1., tau * L, F, dF, Lambda, Q, factored_QF)
                 else:
                     try:
-                        tmp_x = probe_x(y, 1.0, dFTdF + tau * L * np.eye(y.size), v)
+                        tmp_x = probe_x(y, 1., dFTdF + tau * L * np.eye(y.size), v)
                     except np.linalg.LinAlgError as err:
                         print('Singular matrix encountered: {}!'.format(str(err)))
-                        tmp_x = probe_x(y, 1.0, tau * L * np.eye(y.size), v)
+                        tmp_x = probe_x(y, 1., tau * L * np.eye(y.size), v)
             
             n += 1
-        L = max(L / 2.0, L_0)
+        L = max(L / 2., L_0)
         
         if search_strategy == "Armijo":
             t, local_steps, spec_steps = armijo_search(oracle, tmp_x, x, **kwargs) # c1, c2, c1 < c2

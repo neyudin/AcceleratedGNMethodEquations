@@ -66,7 +66,7 @@ class Oracle(object):
             The value of \nabla f_2 evaluated at x.
         """
         x = np.clip(x, a_min=-lim_val, a_max=lim_val)
-        return np.clip(2.0 * np.dot(self.dF(x, idxs).T, self.F(x, idxs)), a_min=-lim_val, a_max=lim_val)
+        return np.clip(2. * np.dot(self.dF(x, idxs).T, self.F(x, idxs)), a_min=-lim_val, a_max=lim_val)
     
     def F(self, x, idxs=None):
         """
@@ -135,6 +135,11 @@ class RosenbrockEvenSumOracle(Oracle):
         self._m, self._n = 2 * n - 2, n
         self._even_cooords = np.arange(1, self._m, 2)
         self._odd_coords = np.arange(0, self._m, 2)
+
+        self._odd_coords_hp1 = self._odd_coords // 2 + 1
+        self._odd_coords_h = self._odd_coords // 2
+
+        self._even_coords_p1h = (self._even_cooords + 1) // 2
     
     def F(self, x, idxs=None):
         """
@@ -152,8 +157,9 @@ class RosenbrockEvenSumOracle(Oracle):
         """
         x = np.clip(x, a_min=-lim_val, a_max=lim_val)
         F_vals = np.zeros(self._m)
-        F_vals[self._odd_coords] += (self._odd_coords // 2 + 1) * (x[self._odd_coords // 2] - x[self._odd_coords // 2 + 1] ** 2)
-        F_vals[self._even_cooords] += 1 - x[(self._even_cooords + 1) // 2]
+        x_odd = x[self._odd_coords_hp1]
+        F_vals[self._odd_coords] += self._odd_coords_hp1 * (x[self._odd_coords_h] - x_odd * x_odd)
+        F_vals[self._even_cooords] += 1. - x[self._even_coords_p1h]
         F_vals = np.clip(F_vals, a_min=-lim_val, a_max=lim_val)
         if idxs is None:
             return F_vals
@@ -176,9 +182,9 @@ class RosenbrockEvenSumOracle(Oracle):
         x = np.clip(x, a_min=-lim_val, a_max=lim_val)
         dF_vals = np.zeros((self._m, self._n))
         
-        dF_vals[self._even_cooords, (self._even_cooords + 1) // 2] += -1
-        dF_vals[self._odd_coords, self._odd_coords // 2] += self._odd_coords // 2 + 1
-        dF_vals[self._odd_coords, self._odd_coords // 2 + 1] += -2 * (self._odd_coords // 2 + 1) * x[self._odd_coords // 2 + 1]
+        dF_vals[self._even_cooords, self._even_coords_p1h] += -1.
+        dF_vals[self._odd_coords, self._odd_coords_h] += self._odd_coords_hp1
+        dF_vals[self._odd_coords, self._odd_coords_hp1] += -2. * self._odd_coords_hp1 * x[self._odd_coords_hp1]
         
         dF_vals = np.clip(dF_vals, a_min=-lim_val, a_max=lim_val)
         if idxs is None:
@@ -221,8 +227,8 @@ class HatOracle(Oracle):
         """
         x = np.clip(x, a_min=-lim_val, a_max=lim_val)
         if idxs is None:
-            return np.clip(4 * (np.sum(x ** 2) - 1.0) * x, a_min=-lim_val, a_max=lim_val)
-        return np.clip(4 * (np.sum(x ** 2) - 1.0) * x[idxs], a_min=-lim_val, a_max=lim_val)
+            return np.clip(4. * (np.sum(x * x) - 1.) * x, a_min=-lim_val, a_max=lim_val)
+        return np.clip(4. * (np.sum(x * x) - 1.) * x[idxs], a_min=-lim_val, a_max=lim_val)
     
     def dF(self, x, idxs=None):
         """
@@ -239,9 +245,9 @@ class HatOracle(Oracle):
             Jacobian the system of equations at point x.
         """
         x = np.clip(x, a_min=-lim_val, a_max=lim_val)
-        dF_vals = 8.0 * x * x[:, np.newaxis]
+        dF_vals = 8. * x * x[:, np.newaxis]
         coords = np.arange(self._m)
-        dF_vals[coords, coords] += 4.0 * (np.sum(x ** 2) - 1.0)
+        dF_vals[coords, coords] += 4. * (np.sum(x * x) - 1.)
         dF_vals = np.clip(dF_vals, a_min=-lim_val, a_max=lim_val)
         if idxs is None:
             return dF_vals

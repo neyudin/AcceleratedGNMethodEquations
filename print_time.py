@@ -25,8 +25,8 @@ def time_printer(exp_res_dict, args):
                     print('        line_search:', line_search, file=f)
                     for probe_pair_num, (probe_c1, probe_c2) in enumerate(zip(args.c1_list, args.c2_list)):
                         print('            c1 = {:.4f}, c2 = {:.4f}:'.format(probe_c1, probe_c2), file=f)
-                        avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0.0, 0.0, 0.0, 0.0
-                        mean_iter, mean_sqr_iter = 0, 0.0
+                        avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0., 0., 0., 0.
+                        mean_iter, mean_sqr_iter = 0, 0.
                         for i in range(args.n_starts):
                             avg_mean_time += exp_res_dict['DetGNM'][name][n][line_search][probe_pair_num][i]["avg_time_s"]
                             avg_mean_sqr_time += exp_res_dict['DetGNM'][name][n][line_search][probe_pair_num][i]["avg_time_s"] ** 2
@@ -46,8 +46,8 @@ def time_printer(exp_res_dict, args):
                         print('                avg mean time {:.4f} s. +- {:.4f} std s; mean time {:.4f} s. +- {:.4f} std s.; mean number of outer iterations {} +- {:.4f}.'.format(avg_mean_time,
                             avg_std, mean_time, std, mean_iter, iter_std), file=f)
                 else:
-                    avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0.0, 0.0, 0.0, 0.0
-                    mean_iter, mean_sqr_iter = 0, 0.0
+                    avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0., 0., 0., 0.
+                    mean_iter, mean_sqr_iter = 0, 0.
                     print('        line_search:', line_search, file=f)
                     for i in range(args.n_starts):
                         avg_mean_time += exp_res_dict['DetGNM'][name][n][line_search][i]["avg_time_s"]
@@ -80,8 +80,8 @@ def time_printer(exp_res_dict, args):
                         print('            line_search: {}'.format(line_search), file=f)
                         for probe_pair_num, (probe_c1, probe_c2) in enumerate(zip(args.c1_list, args.c2_list)):
                             print('                c1 = {:.4f}, c2 = {:.4f}:'.format(probe_c1, probe_c2), file=f)
-                            avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0.0, 0.0, 0.0, 0.0
-                            mean_iter, mean_sqr_iter = 0, 0.0
+                            avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0., 0., 0., 0.
+                            mean_iter, mean_sqr_iter = 0, 0.
                             for i in range(args.n_starts):
                                 avg_mean_time += exp_res_dict['ArmijoAccDetGNM'][name][n][pair_num][line_search][probe_pair_num][i]["avg_time_s"]
                                 avg_mean_sqr_time += exp_res_dict['ArmijoAccDetGNM'][name][n][pair_num][line_search][probe_pair_num][i]["avg_time_s"] ** 2
@@ -102,8 +102,8 @@ def time_printer(exp_res_dict, args):
                                 'avg mean time {:.4f} s. +- {:.4f} std s; mean time {:.4f} s. +- {:.4f} std s.; mean number of outer iterations {} +- {:.4f}.'.format(avg_mean_time, avg_std,
                                 mean_time, std, mean_iter, iter_std), file=f)
                     else:
-                        avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0.0, 0.0, 0.0, 0.0
-                        mean_iter, mean_sqr_iter = 0, 0.0
+                        avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0., 0., 0., 0.
+                        mean_iter, mean_sqr_iter = 0, 0.
                         print('            line_search: {}'.format(line_search), file=f)
                         for i in range(args.n_starts):
                             avg_mean_time += exp_res_dict['ArmijoAccDetGNM'][name][n][pair_num][line_search][i]["avg_time_s"]
@@ -134,8 +134,8 @@ def time_printer(exp_res_dict, args):
                     print('        line_search:', line_search, file=f)
                     for probe_pair_num, (probe_c1, probe_c2) in enumerate(zip(args.c1_list, args.c2_list)):
                         print('            c1 = {:.4f}, c2 = {:.4f}:'.format(probe_c1, probe_c2), file=f)
-                        avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0.0, 0.0, 0.0, 0.0
-                        mean_iter, mean_sqr_iter = 0, 0.0
+                        avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0., 0., 0., 0.
+                        mean_iter, mean_sqr_iter = 0, 0.
                         for i in range(args.n_starts):
                             avg_mean_time += exp_res_dict['ExtrapolationAccDetGNM'][name][n][line_search][probe_pair_num][i]["avg_time_s"]
                             avg_mean_sqr_time += exp_res_dict['ExtrapolationAccDetGNM'][name][n][line_search][probe_pair_num][i]["avg_time_s"] ** 2
@@ -155,8 +155,8 @@ def time_printer(exp_res_dict, args):
                         print('                avg mean time {:.4f} s. +- {:.4f} std s; mean time {:.4f} s. +- {:.4f} std s.; mean number of outer iterations {} +- {:.4f}.'.format(avg_mean_time,
                             avg_std, mean_time, std, mean_iter, iter_std), file=f)
                 else:
-                    avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0.0, 0.0, 0.0, 0.0
-                    mean_iter, mean_sqr_iter = 0, 0.0
+                    avg_mean_time, avg_mean_sqr_time, mean_time, mean_sqr_time = 0., 0., 0., 0.
+                    mean_iter, mean_sqr_iter = 0, 0.
                     print('        line_search:', line_search, file=f)
                     for i in range(args.n_starts):
                         avg_mean_time += exp_res_dict['ExtrapolationAccDetGNM'][name][n][line_search][i]["avg_time_s"]

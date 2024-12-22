@@ -39,20 +39,15 @@ parser.add_argument(
 parser.add_argument(
     '--n_dims', action=Store_as_array, type=int, nargs='+', default=np.array([100]),
     help='The list of numbers of parameters.')
-
-parser.add_argument(
-    '--eta_list', action=Store_as_array, type=float, nargs='+',
-    default=np.array([1e-4, 1e-3, 1e-2, 1e-1, 1.0]),
-    help='The list of step scales.')
 parser.add_argument('--L_0', type=float, default=1e-6,
                     help='Initial estimate of the local Lipschitz constant for \psi local model.')
 parser.add_argument(
     '--c1_list', action=Store_as_array, type=float, nargs='+',
-    default=np.array([0.25, 0.33, 1e-4, 1e-4]),
+    default=np.array([.25, .33, 1e-4, 1e-4]),
     help='The list of c1 values for Armijo rule.')
 parser.add_argument(
     '--c2_list', action=Store_as_array, type=float, nargs='+',
-    default=np.array([0.75, 0.66, 0.9, 0.1]),
+    default=np.array([.75, .66, .9, .1]),
     help='The list of c2 values for Armijo rule.')
 parser.add_argument(
     '--marker_list', action=Store_as_list, type=str, nargs='+',
@@ -64,12 +59,8 @@ parser.add_argument(
     help='The list of visualization colors values for Armijo rule.')
 parser.add_argument(
     '--mark_deltas', action=Store_as_array, type=float, nargs='+',
-    default=np.array([0.13, 0.23, 0.29, 0.37]),
+    default=np.array([.13, .23, .29, .37]),
     help="The list of visualization marks' deltas for Armijo rule.")
-parser.add_argument(
-    '--n_points_list', action=Store_as_array, type=float, nargs='+',
-    default=np.array([2, 4, 8, 16, 32, 64, 128]),
-    help='The list of n_points values for brute-force rule.')
 parser.add_argument(
     '--time_stats_fname', type=str, default='time.txt', help='Name of the file with time measurements statistics')
 
@@ -82,12 +73,12 @@ if __name__ == '__main__':
     Path(args.store_dir).mkdir(parents=True, exist_ok=True) # Create directory store_dir if it does not exist.
     
     np.random.seed(args.seed) # The random seed specification for reproducibility.
-    x_0_dict = {n: np.random.randn(args.n_starts, n) - 7 for n in args.n_dims} # The dictionary of the initial values of parameters.
+    x_0_dict = {n: np.random.randn(args.n_starts, n) - 7. for n in args.n_dims} # The dictionary of the initial values of parameters.
     
     for n in x_0_dict.keys():
         for i in range(x_0_dict[n].shape[0]):
             for x_i in x_0_dict[n][i]:
-                assert x_i < -3
+                assert x_i < -3.
     print('Initialization is consistent!')
     
     exp_res_dict = experiment_runner(args, x_0_dict) # Run experiments.
