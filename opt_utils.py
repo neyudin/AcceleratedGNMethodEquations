@@ -132,35 +132,35 @@ def fast_probe_x(x, eta, tauL, F, dF, Lambda, Q, factored_QF, dF2=None):
             np.clip(tauL, a_min=eps, a_max=lim_val)
 
 
-def f1_directional_subgradient(oracle, x_new, x_old, t):
+def f1_directional_subgradient(oracle, start, direction, scale):
     """
     Computes \nabla_t f_1(x_new + t * (x_new - x_old)).
     Parameters
     ----------
     oracle : Oracle class instance
         Oracle of the optimization criterion.
-    x_new : array_like
-        Current optimizable point in the procedure.
-    x_old : array_like
-        Previous optimizable point in the procedure.
-    t : float
-        Momentum.
+    start : array_like
+        Current optimizable point in the procedure, equals x_new.
+    direction : array_like
+        Direction to seek new point, equals (x_new - x_old).
+    scale : float
+        Momentum t >= 0.
     Returns
     -------
     subgradient : float
         \nabla_t f_1(x_new + t * (x_new - x_old)) value.
     """
-    point = x_new + t * (x_new - x_old)
+    point = start + scale * direction
     f1 = oracle.f_1(point)
     if f1 < eps:
         nabla_f1 = np.random.randn(oracle.shape[0])
         nabla_f1 = nabla_f1 / np.linalg.norm(nabla_f1)
     else:
         nabla_f1 = oracle.F(point) / f1
-    return np.dot(np.dot(oracle.dF(point).T, nabla_f1), x_new - x_old)
+    return np.dot(np.dot(oracle.dF(point).T, nabla_f1), direction)
 
 
-def golden_ratio_search(oracle, x_new, x_old):
+def golden_ratio_search(oracle, x_new, x_old, **kwargs):
     """
     Auxiliary procedure to compute optimal momentum using the golden-section search.
     Parameters
@@ -194,7 +194,7 @@ def golden_ratio_search(oracle, x_new, x_old):
     return t, n_iter
 
 
-def point_sampling_search(oracle, x_new, x_old, n_points=10, strategy="grid_search"):
+def point_sampling_search(oracle, x_new, x_old, n_points=10, strategy="grid_search", **kwargs):
     """
     Auxiliary procedure to compute optimal momentum using brute-force search.
     Parameters
@@ -228,7 +228,73 @@ def point_sampling_search(oracle, x_new, x_old, n_points=10, strategy="grid_sear
     return t_vals[min_idx]
 
 
-def armijo_search(oracle, x_new, x_old, c1=0.33, c2=0.66):
+def armijo_probe_x(oracle, x, tauL, F, dF, Lambda, Q, factored_QF, dF2=None, probe_c1=0.33, probe_c2=0.66, **kwargs):
+    """
+    Auxiliary procedure to compute new point using optimal \eta found by Armijo rule.
+    Parameters
+    ----------
+    oracle : Oracle class instance
+        Oracle of the optimization criterion.
+    x : array_like
+        Previous optimizable point in the procedure.
+    tauL : float
+        The value of \tau L.
+    F : array_like
+        The system of equations evaluated at point x.
+    dF : array_like
+        The jacobian of system of equations evaluated at point x.
+    Lambda : array_like
+        The diagonal matrix of eigenvalues of hessian-like matrix.
+    Q : array_like
+        The unitary matrix of eigenvectors for corresponding eigenvalues.
+    factored_QF : tuple
+        The tuple of matrices and vectors from factorization of computation of the next point.
+    dF2 : array_like, default=None
+        If not None, the doubly stochastic step is used and dF2 is tracted as independently
+        sampled jacobian.
+    probe_c1 : float, default=0.33
+        Slope coefficient, 0 < c1 < c2 < 1.
+    probe_c2 : float, default=0.66
+        Slope coefficient, 0 < c1 < c2 < 1.
+    Returns
+    -------
+    array_like
+        The next optimizable point.
+    """
+    m, n = dF.shape
+    if m > n:
+        v = np.dot(Q, factored_QF[0] / np.clip(Lambda + tauL, a_min=eps, a_max=lim_val))
+    else:
+        if dF2 is None:
+            v = np.dot(dF.T, F - np.dot(Q, factored_QF[0] / np.clip(Lambda + tauL, a_min=eps, a_max=lim_val))) /\
+                       np.clip(tauL, a_min=eps, a_max=lim_val)
+        else:
+            v = (factored_QF[0] - np.dot(factored_QF[1], factored_QF[2] / np.clip(Lambda + tauL, a_min=eps, a_max=lim_val))) /\
+                 np.clip(tauL, a_min=eps, a_max=lim_val)
+    
+    eta = 1.0
+    directional_nabla_f1 = f1_directional_subgradient(oracle, x, -v, eta)
+    if directional_nabla_f1 >= 0.0:
+        return x - eta * v
+    f1_one = oracle.f_1(x - eta * v)
+    eta = 2.0
+    tmp_x = x - eta * v
+    if (f1_one + probe_c1 * directional_nabla_f1 * (eta - 1.0)) >= oracle.f_1(tmp_x):
+        return tmp_x
+    eta_1, eta_2 = 1.0, 2.0
+    while True:
+        eta = (eta_1 + eta_2) / 2.0
+        tmp_x = x - eta * v
+        if (((f1_one + probe_c2 * directional_nabla_f1 * (eta - 1.0)) <= oracle.f_1(tmp_x)) and\
+            (oracle.f_1(tmp_x) <= (f1_one + probe_c1 * directional_nabla_f1 * (eta - 1.0)))) or (abs(eta_2 - eta_1) <= eps):
+            return tmp_x
+        if (f1_one + probe_c2 * directional_nabla_f1 * (eta - 1.0)) > oracle.f_1(tmp_x):
+            eta_1 = eta
+        elif oracle.f_1(tmp_x) > (f1_one + probe_c1 * directional_nabla_f1 * (eta - 1.0)):
+            eta_2 = eta
+
+
+def armijo_search(oracle, x_new, x_old, c1=0.33, c2=0.66, **kwargs):
     """
     Auxiliary procedure to compute optimal momentum using Armijo rule.
     Parameters
@@ -253,7 +319,7 @@ def armijo_search(oracle, x_new, x_old, c1=0.33, c2=0.66):
         The number of specialization iterations.
     """
     local_steps, spec_steps = 0, 0
-    directional_nabla_f1 = f1_directional_subgradient(oracle, x_new, x_old, 0.0)
+    directional_nabla_f1 = f1_directional_subgradient(oracle, x_new, x_new - x_old, 0.0)
     if directional_nabla_f1 >= 0.0:
         return 0.0, local_steps, spec_steps
     f1_zero = oracle.f_1(x_new)
@@ -265,35 +331,31 @@ def armijo_search(oracle, x_new, x_old, c1=0.33, c2=0.66):
     t1, t2 = t, t
     while True:
         local_steps += 1
-        if ((f1_zero + c2 * directional_nabla_f1 * t1) <= oracle.f_1(x_new + t1 * (x_new - x_old))) and (oracle.f_1(x_new + t1 * (x_new - x_old)) <= (f1_zero + c1 * directional_nabla_f1 * t1)):
+        f1_t1 = oracle.f_1(x_new + t1 * (x_new - x_old))
+        if ((f1_zero + c2 * directional_nabla_f1 * t1) <= f1_t1) and (f1_t1 <= (f1_zero + c1 * directional_nabla_f1 * t1)):
             return t1, local_steps, spec_steps
-        if ((f1_zero + c2 * directional_nabla_f1 * t2) <= oracle.f_1(x_new + t2 * (x_new - x_old))) and (oracle.f_1(x_new + t2 * (x_new - x_old)) <= (f1_zero + c1 * directional_nabla_f1 * t2)):
+        f1_t2 = oracle.f_1(x_new + t2 * (x_new - x_old))
+        if ((f1_zero + c2 * directional_nabla_f1 * t2) <= f1_t2) and (f1_t2 <= (f1_zero + c1 * directional_nabla_f1 * t2)):
             return t2, local_steps, spec_steps
-        if ((f1_zero + c2 * directional_nabla_f1 * t1) > oracle.f_1(x_new + t1 * (x_new - x_old))) and (oracle.f_1(x_new + t2 * (x_new - x_old)) <= (f1_zero + c1 * directional_nabla_f1 * t2)):
-            t1 = t2
-            t2 = 2.0 * t1
-        elif ((f1_zero + c2 * directional_nabla_f1 * t1) <= oracle.f_1(x_new + t1 * (x_new - x_old))) and (oracle.f_1(x_new + t2 * (x_new - x_old)) > (f1_zero + c1 * directional_nabla_f1 * t2)):
-            t2 = t1
-            t1 = t2 / 2.0
-        elif ((f1_zero + c2 * directional_nabla_f1 * t1) > oracle.f_1(x_new + t1 * (x_new - x_old))) and (oracle.f_1(x_new + t2 * (x_new - x_old)) > (f1_zero + c1 * directional_nabla_f1 * t2)):
+        if f1_t2 < (f1_zero + c1 * directional_nabla_f1 * t2):
+            t2 *= 2.0
+        if (f1_zero + c2 * directional_nabla_f1 * t1) < f1_t1:
+            t1 /= 2.0
+        if ((f1_zero + c2 * directional_nabla_f1 * t1) >= oracle.f_1(x_new + t1 * (x_new - x_old))) and (oracle.f_1(x_new + t2 * (x_new - x_old)) >= (f1_zero + c1 * directional_nabla_f1 * t2)):
             break
-        else:
-            return 0.0, local_steps, spec_steps#impossible variant
     while True:
         spec_steps += 1
         hat_t = (t1 + t2) / 2.0
-        if ((f1_zero + c2 * directional_nabla_f1 * hat_t) <= oracle.f_1(x_new + hat_t * (x_new - x_old))) and\
-            (oracle.f_1(x_new + hat_t * (x_new - x_old)) <= (f1_zero + c1 * directional_nabla_f1 * hat_t)):
+        f1_hat_t = oracle.f_1(x_new + hat_t * (x_new - x_old))
+        if (((f1_zero + c2 * directional_nabla_f1 * hat_t) <= f1_hat_t) and (f1_hat_t <= (f1_zero + c1 * directional_nabla_f1 * hat_t))) or (abs(t2 - t1) <= eps):
             return hat_t, local_steps, spec_steps
-        if ((f1_zero + c2 * directional_nabla_f1 * hat_t) > oracle.f_1(x_new + hat_t * (x_new - x_old))) and (oracle.f_1(x_new + t2 * (x_new - x_old)) > (f1_zero + c1 * directional_nabla_f1 * t2)):
+        if (f1_zero + c2 * directional_nabla_f1 * hat_t) > f1_hat_t:
             t1 = hat_t
-        elif ((f1_zero + c2 * directional_nabla_f1 * t1) > oracle.f_1(x_new + t1 * (x_new - x_old))) and (oracle.f_1(x_new + hat_t * (x_new - x_old)) > (f1_zero + c1 * directional_nabla_f1 * hat_t)):
+        elif f1_hat_t > (f1_zero + c1 * directional_nabla_f1 * hat_t):
             t2 = hat_t
-        else:
-            return 0.0, local_steps, spec_steps#impossible variant
 
 
-def extrapolation_search(oracle, x_new, x_old):
+def extrapolation_search(oracle, x_new, x_old, **kwargs):
     """
     Auxiliary procedure to compute optimal momentum using Extrapolation strategy.
     Parameters
@@ -313,7 +375,7 @@ def extrapolation_search(oracle, x_new, x_old):
     """
     n_iter = 0
     t_old, t_new = 0.0, 1.0
-    while (f1_directional_subgradient(oracle, x_new, x_old, t_new) < 0.0) and (oracle.f_1(x_new + t_new * (x_new - x_old)) <= oracle.f_1(x_new + t_old * (x_new - x_old))):
+    while (f1_directional_subgradient(oracle, x_new, x_new - x_old, t_new) < 0.0) and (oracle.f_1(x_new + t_new * (x_new - x_old)) <= oracle.f_1(x_new + t_old * (x_new - x_old))):
         n_iter += 1
         t_old = t_new
         t_new *= 2.0

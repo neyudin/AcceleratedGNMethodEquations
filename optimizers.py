@@ -1,8 +1,8 @@
 from opt_utils import *
-from oracles import NesterovSkokovOracle, HatOracle, PLOracle, lim_val, eps
+from oracles import RosenbrockEvenSumOracle, HatOracle, lim_val, eps
 
 
-def DetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None):
+def DetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, step_scale_search=None, **kwargs):
     """
     Find argminimum of f_1 using the deterministic Gauss-Newton method with exact proximal map and
     \tau_k = \hat{f}_1(x_k).
@@ -44,30 +44,38 @@ def DetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None):
         F = oracle.F(x)
         dF = oracle.dF(x)
         
-        if fast_update:
+        if step_scale_search == "Armijo":
             Lambda, Q, *factored_QF = factor_step_probe(F, dF)
-            tmp_x = fast_probe_x(x, 1.0, tau * L, F, dF, Lambda, Q, factored_QF)
+            tmp_x = armijo_probe_x(oracle, x, tau * L, F, dF, Lambda, Q, factored_QF, **kwargs)
         else:
-            dFTdF = np.dot(dF.T, dF)
-            v = np.dot(dF.T, F)
-            try:
-                tmp_x = probe_x(x, 1.0, dFTdF + tau * L * np.eye(x.size), v)
-            except np.linalg.LinAlgError as err:
-                print('Singular matrix encountered: {}!'.format(str(err)))
-                tmp_x = probe_x(x, 1.0, tau * L * np.eye(x.size), v)
-        
-        n = 1
-        while oracle.f_1(tmp_x) > psi(F, dF, x, L, tau, tmp_x):
-            L *= 2.0
-            
             if fast_update:
+                Lambda, Q, *factored_QF = factor_step_probe(F, dF)
                 tmp_x = fast_probe_x(x, 1.0, tau * L, F, dF, Lambda, Q, factored_QF)
             else:
+                dFTdF = np.dot(dF.T, dF)
+                v = np.dot(dF.T, F)
                 try:
                     tmp_x = probe_x(x, 1.0, dFTdF + tau * L * np.eye(x.size), v)
                 except np.linalg.LinAlgError as err:
                     print('Singular matrix encountered: {}!'.format(str(err)))
                     tmp_x = probe_x(x, 1.0, tau * L * np.eye(x.size), v)
+        
+        n = 1
+        while oracle.f_1(tmp_x) > psi(F, dF, x, L, tau, tmp_x):
+            L *= 2.0
+            
+            if step_scale_search == "Armijo":
+                Lambda, Q, *factored_QF = factor_step_probe(F, dF)
+                tmp_x = armijo_probe_x(oracle, x, tau * L, F, dF, Lambda, Q, factored_QF, **kwargs)
+            else:
+                if fast_update:
+                    tmp_x = fast_probe_x(x, 1.0, tau * L, F, dF, Lambda, Q, factored_QF)
+                else:
+                    try:
+                        tmp_x = probe_x(x, 1.0, dFTdF + tau * L * np.eye(x.size), v)
+                    except np.linalg.LinAlgError as err:
+                        print('Singular matrix encountered: {}!'.format(str(err)))
+                        tmp_x = probe_x(x, 1.0, tau * L * np.eye(x.size), v)
             
             n += 1
         L = max(L / 2.0, L_0)
@@ -83,7 +91,7 @@ def DetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None):
     return x, f_vals, nabla_f_2_norm_vals, nabla_f_2_vals, n_inner_iters
 
 
-def AccDetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, search_strategy="Armijo", **kwargs):
+def AccDetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, search_strategy="Armijo", step_scale_search=None, **kwargs):
     """
     Find argminimum of f_1 using the accelerated deterministic Gauss-Newton method with exact proximal map and
     \tau_k = \hat{f}_1(x_k).
@@ -132,7 +140,7 @@ def AccDetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, search_str
         local_steps_list, spec_steps_list = [], []
     elif search_strategy == "Extrapolation":
         n_iter_list = []
-    else:#golden_ratio search
+    else: # golden_ratio search
         n_iter_list = []
     x = x_0.copy()
     y = x.copy()
@@ -144,46 +152,54 @@ def AccDetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, search_str
         F = oracle.F(y)
         dF = oracle.dF(y)
         
-        if fast_update:
+        if step_scale_search == "Armijo":
             Lambda, Q, *factored_QF = factor_step_probe(F, dF)
-            tmp_x = fast_probe_x(y, 1.0, tau * L, F, dF, Lambda, Q, factored_QF)
+            tmp_x = armijo_probe_x(oracle, y, tau * L, F, dF, Lambda, Q, factored_QF, **kwargs)
         else:
-            dFTdF = np.dot(dF.T, dF)
-            v = np.dot(dF.T, F)
-            try:
-                tmp_x = probe_x(y, 1.0, dFTdF + tau * L * np.eye(y.size), v)
-            except np.linalg.LinAlgError as err:
-                print('Singular matrix encountered: {}!'.format(str(err)))
-                tmp_x = probe_x(y, 1.0, tau * L * np.eye(y.size), v)
-        
-        n = 1
-        while oracle.f_1(tmp_x) > psi(F, dF, y, L, tau, tmp_x):
-            L *= 2.0
-            
             if fast_update:
+                Lambda, Q, *factored_QF = factor_step_probe(F, dF)
                 tmp_x = fast_probe_x(y, 1.0, tau * L, F, dF, Lambda, Q, factored_QF)
             else:
+                dFTdF = np.dot(dF.T, dF)
+                v = np.dot(dF.T, F)
                 try:
                     tmp_x = probe_x(y, 1.0, dFTdF + tau * L * np.eye(y.size), v)
                 except np.linalg.LinAlgError as err:
                     print('Singular matrix encountered: {}!'.format(str(err)))
                     tmp_x = probe_x(y, 1.0, tau * L * np.eye(y.size), v)
+        
+        n = 1
+        while oracle.f_1(tmp_x) > psi(F, dF, y, L, tau, tmp_x):
+            L *= 2.0
+            
+            if step_scale_search == "Armijo":
+                Lambda, Q, *factored_QF = factor_step_probe(F, dF)
+                tmp_x = armijo_probe_x(oracle, y, tau * L, F, dF, Lambda, Q, factored_QF, **kwargs)
+            else:
+                if fast_update:
+                    tmp_x = fast_probe_x(y, 1.0, tau * L, F, dF, Lambda, Q, factored_QF)
+                else:
+                    try:
+                        tmp_x = probe_x(y, 1.0, dFTdF + tau * L * np.eye(y.size), v)
+                    except np.linalg.LinAlgError as err:
+                        print('Singular matrix encountered: {}!'.format(str(err)))
+                        tmp_x = probe_x(y, 1.0, tau * L * np.eye(y.size), v)
             
             n += 1
         L = max(L / 2.0, L_0)
         
         if search_strategy == "Armijo":
-            t, local_steps, spec_steps = armijo_search(oracle, tmp_x, x, **kwargs)#c1, c2, c1 < c2
+            t, local_steps, spec_steps = armijo_search(oracle, tmp_x, x, **kwargs) # c1, c2, c1 < c2
             local_steps_list.append(local_steps)
             spec_steps_list.append(spec_steps)
         elif search_strategy == "Extrapolation":
             t, n_iter = extrapolation_search(oracle, tmp_x, x)
             n_iter_list.append(n_iter)
         elif search_strategy == "Interpolation":
-            t = point_sampling_search(oracle, tmp_x, x, strategy="grid_search", **kwargs)#n_points
+            t = point_sampling_search(oracle, tmp_x, x, strategy="grid_search", **kwargs) # n_points
         elif search_strategy == "Sampling":
-            t = point_sampling_search(oracle, tmp_x, x, strategy="random_search", **kwargs)#n_points
-        else:#golden_ratio search
+            t = point_sampling_search(oracle, tmp_x, x, strategy="random_search", **kwargs) # n_points
+        else: # golden_ratio search
             t, n_iter = golden_ratio_search(oracle, tmp_x, x)
             n_iter_list.append(n_iter)
         y = tmp_x + t * (tmp_x - x)
@@ -205,6 +221,6 @@ def AccDetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, search_str
         return y, f_vals, nabla_f_2_norm_vals, nabla_f_2_vals, n_inner_iters
     elif search_strategy == "Sampling":
         return y, f_vals, nabla_f_2_norm_vals, nabla_f_2_vals, n_inner_iters
-    else:#golden_ratio search
+    else: # golden_ratio search
         return y, f_vals, nabla_f_2_norm_vals, nabla_f_2_vals, n_inner_iters, n_iter_list
 

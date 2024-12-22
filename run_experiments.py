@@ -28,23 +28,23 @@ class Store_as_list(argparse._StoreAction):
 
 
 parser = argparse.ArgumentParser('Flex GNM')
-parser.add_argument('--N_iter', type=int, default=100, help='The number of iterations to run Gauss-Newton method.')
+parser.add_argument('--N_iter', type=int, default=1000, help='The number of iterations to run Gauss-Newton method.')
 parser.add_argument('--seed', type=int, default=617, help='The random seed.')
 parser.add_argument(
     '--n_starts', type=int, default=5, help='The number of random samples for each combination of hyperparameters.')
 parser.add_argument(
-    '--verbose', type=bool, default=False, help='Whether to print auxiliary messages throughout the whole experiment.')
+    '--verbose', type=bool, default=True, help='Whether to print auxiliary messages throughout the whole experiment.')
 parser.add_argument(
     '--store_dir', type=str, default='./figures', help="The directory to store experiments' results.")
 parser.add_argument(
-    '--n_dims', action=Store_as_array, type=int, nargs='+', default=np.array([10, 100, 1000]),
+    '--n_dims', action=Store_as_array, type=int, nargs='+', default=np.array([100]),
     help='The list of numbers of parameters.')
 
 parser.add_argument(
     '--eta_list', action=Store_as_array, type=float, nargs='+',
     default=np.array([1e-4, 1e-3, 1e-2, 1e-1, 1.0]),
     help='The list of step scales.')
-parser.add_argument('--L_0', type=float, default=1.0,
+parser.add_argument('--L_0', type=float, default=1e-6,
                     help='Initial estimate of the local Lipschitz constant for \psi local model.')
 parser.add_argument(
     '--c1_list', action=Store_as_array, type=float, nargs='+',
@@ -54,6 +54,18 @@ parser.add_argument(
     '--c2_list', action=Store_as_array, type=float, nargs='+',
     default=np.array([0.75, 0.66, 0.9, 0.1]),
     help='The list of c2 values for Armijo rule.')
+parser.add_argument(
+    '--marker_list', action=Store_as_list, type=str, nargs='+',
+    default=["^", "v", "s", "D"],
+    help='The list of visualization markers values for Armijo rule.')
+parser.add_argument(
+    '--plot_colors', action=Store_as_list, type=str, nargs='+',
+    default=["g", "r", "c", "k"],
+    help='The list of visualization colors values for Armijo rule.')
+parser.add_argument(
+    '--mark_deltas', action=Store_as_array, type=float, nargs='+',
+    default=np.array([0.13, 0.23, 0.29, 0.37]),
+    help="The list of visualization marks' deltas for Armijo rule.")
 parser.add_argument(
     '--n_points_list', action=Store_as_array, type=float, nargs='+',
     default=np.array([2, 4, 8, 16, 32, 64, 128]),
@@ -70,10 +82,17 @@ if __name__ == '__main__':
     Path(args.store_dir).mkdir(parents=True, exist_ok=True) # Create directory store_dir if it does not exist.
     
     np.random.seed(args.seed) # The random seed specification for reproducibility.
-    x_0_dict = {n: np.random.randn(args.n_starts, n) for n in args.n_dims} # The dictionary of the initial values of parameters.
+    x_0_dict = {n: np.random.randn(args.n_starts, n) - 7 for n in args.n_dims} # The dictionary of the initial values of parameters.
+    
+    for n in x_0_dict.keys():
+        for i in range(x_0_dict[n].shape[0]):
+            for x_i in x_0_dict[n][i]:
+                assert x_i < -3
+    print('Initialization is consistent!')
     
     exp_res_dict = experiment_runner(args, x_0_dict) # Run experiments.
     pkl.dump(exp_res_dict, open(args.store_dir + '/flex_gnm_experiments_results.pkl', 'wb')) # Save infographics.
+    # exp_res_dict = pkl.load(open(args.store_dir + '/flex_gnm_experiments_results.pkl', "rb"))
     
     plot_experiments_results(exp_res_dict, args) # Plot results.
     
