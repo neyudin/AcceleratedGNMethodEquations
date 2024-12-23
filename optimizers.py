@@ -2,7 +2,7 @@ from opt_utils import *
 from oracles import RosenbrockEvenSumOracle, HatOracle, lim_val, eps
 
 
-def DetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, step_scale_search=None, **kwargs):
+def DetGNM(oracle, N, x_0, L_0, fast_update=True, tau_const=None, step_scale_search=None, **kwargs):
     """
     Find argminimum of f_1 using the deterministic Gauss-Newton method with exact proximal map and
     \tau_k = \hat{f}_1(x_k).
@@ -21,6 +21,8 @@ def DetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, step_scale_se
         otherwise only probe_x is used.
     tau_const : float, default=None
         If not None, then the constant value is used for tau equal tau_const.
+    step_scale_search : str, default=None
+        Strategy to search \eta. Currently, by default, \eta=1, otherwise step_scale_search="Armijo" is employed.
     Returns
     -------
     x : array_like
@@ -91,7 +93,7 @@ def DetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, step_scale_se
     return x, f_vals, nabla_f_2_norm_vals, nabla_f_2_vals, n_inner_iters
 
 
-def AccDetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, search_strategy="Armijo", step_scale_search=None, **kwargs):
+def AccDetGNM(oracle, N, x_0, L_0, fast_update=True, tau_const=None, search_strategy="Armijo", step_scale_search=None, **kwargs):
     """
     Find argminimum of f_1 using the accelerated deterministic Gauss-Newton method with exact proximal map and
     \tau_k = \hat{f}_1(x_k).
@@ -113,6 +115,8 @@ def AccDetGNM(oracle, N, x_0, L_0, fast_update=False, tau_const=None, search_str
     search_strategy : str, default="Armijo"
         Auxiliary procedure used to compute momentum. Possible values: "Armijo", "Extrapolation", "Interpolation", "Sampling", "GoldenRatio".
         Can take additional named parameters: "Armijo" has c1 and c2, 0 < c1 < c2 < 1, "Interpolation" and "Sampling" have n_points = 1, 2, 3 ... .
+    step_scale_search : str, default=None
+        Strategy to search \eta. Currently, by default, \eta=1, otherwise step_scale_search="Armijo" is employed.
     Returns
     -------
     y : array_like

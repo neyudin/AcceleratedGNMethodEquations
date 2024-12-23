@@ -48,7 +48,7 @@ def factor_step_probe(F, dF, dF2=None):
     -------
     Tuple
         The tuple of factors for fast computation of the optimization step:
-        Lambda, Q, ... and other factors
+        Lambda, Q, ... and other factors.
         Lambda : array_like
             The diagonal matrix of eigenvalues of hessian-like matrix.
         Q : array_like

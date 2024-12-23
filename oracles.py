@@ -1,8 +1,8 @@
 import numpy as np
 
 
-lim_val = 1e+12 # Maximal absolute value of variables in experiments
-eps = 1e-6 # Tolerance of computations
+lim_val = 1e+12 # Maximal absolute value of variables in experiments.
+eps = 1e-6 # Tolerance of computations.
 
 
 class Oracle(object):
@@ -25,7 +25,7 @@ class Oracle(object):
         x : array_like
             Array of optimizable float parameters.
         idxs : array_like, default=None
-            Indexes of used functions in the random sample of f_1
+            Indexes of used functions in the random sample of f_1.
         Returns
         -------
         float
@@ -42,7 +42,7 @@ class Oracle(object):
         x : array_like
             Array of optimizable float parameters.
         idxs : array_like, default=None
-            Indexes of used functions in the random sample of f_2
+            Indexes of used functions in the random sample of f_2.
         Returns
         -------
         float
@@ -59,7 +59,7 @@ class Oracle(object):
         x : array_like
             Array of optimizable float parameters.
         idxs : array_like, default=None
-            Indexes of used functions in the random sample of \nabla f_2
+            Indexes of used functions in the random sample of \nabla f_2.
         Returns
         -------
         array_like
@@ -76,7 +76,7 @@ class Oracle(object):
         x : array_like
             Array of optimizable float parameters.
         idxs : array_like, default=None
-            Indexes of used functions in the random sample of F
+            Indexes of used functions in the random sample of F.
         Raises
         ------
         NotImplementedError
@@ -92,7 +92,7 @@ class Oracle(object):
         x : array_like
             Array of optimizable float parameters.
         idxs : array_like, default=None
-            Indexes of used functions in the random sample of dF
+            Indexes of used functions in the random sample of dF.
         Raises
         ------
         NotImplementedError
@@ -116,7 +116,7 @@ class Oracle(object):
 class RosenbrockEvenSumOracle(Oracle):
     """
     Rosenbrock-Skokov function f_{2}(x) = \sum\limits_{i = 1}^{n - 1}(i^2 * (x_{i} - x_{i + 1}^{2})^{2} + (1 - x_{i + 1})^{2})
-    represented as system of partial derivatives.
+    represented as system of summands.
     Attributes
     ----------
     _m : int
@@ -149,7 +149,7 @@ class RosenbrockEvenSumOracle(Oracle):
         x : array_like
             Array of optimizable float parameters.
         idxs : array_like, default=None
-            Indexes of used functions in the random sample of F
+            Indexes of used functions in the random sample of F.
         Returns
         -------
         array_like
@@ -173,7 +173,7 @@ class RosenbrockEvenSumOracle(Oracle):
         x : array_like
             Array of optimizable float parameters.
         idxs : array_like, default=None
-            Indexes of used functions in the random sample of dF
+            Indexes of used functions in the random sample of dF.
         Returns
         -------
         array_like
@@ -219,7 +219,7 @@ class HatOracle(Oracle):
         x : array_like
             Array of optimizable float parameters.
         idxs : array_like, default=None
-            Indexes of used functions in the random sample of F
+            Indexes of used functions in the random sample of F.
         Returns
         -------
         array_like
@@ -238,7 +238,7 @@ class HatOracle(Oracle):
         x : array_like
             Array of optimizable float parameters.
         idxs : array_like, default=None
-            Indexes of used functions in the random sample of dF
+            Indexes of used functions in the random sample of dF.
         Returns
         -------
         array_like
