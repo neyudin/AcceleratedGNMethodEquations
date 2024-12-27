@@ -1,5 +1,5 @@
 # Description
-Code to conduct experiments for the paper [**Regularization and acceleration of Gauss-Newton method**](http://crm-en.ics.org.ru/journal/).
+Code to conduct experiments for the paper [**Regularization and acceleration of Gauss-Newton method**](http://crm-en.ics.org.ru/uploads/crmissues/crm_2024_7/30_yudin.pdf).
 
 ## Overview
 
